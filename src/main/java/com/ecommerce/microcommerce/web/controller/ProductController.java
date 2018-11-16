@@ -57,6 +57,14 @@ public class ProductController {
     }
 
 
+    @ApiOperation(value = "retourne la liste de tous les produits triés par nom croissant ")
+    @GetMapping(value = "/AdminProduits/OrderBy")
+    public List<Product> trierProduitsParOrdreAlphabetique() {
+        List<Product> produitsOrdonnes = productDao.produitsParOrdreAlphabetique();
+
+        return produitsOrdonnes;
+    }
+
     @ApiOperation(value = "Récupère un produit grâce à son ID à condition que celui-ci soit en stock!")
     @GetMapping(value = "/Produits/{id}")
     public Product afficherUnProduit(@PathVariable int id) {
