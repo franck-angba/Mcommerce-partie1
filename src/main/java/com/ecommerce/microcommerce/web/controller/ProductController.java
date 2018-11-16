@@ -16,59 +16,62 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.List;
+import java.util.*;
 
 
 @Api( description="API pour es opérations CRUD sur les produits.")
-
 @RestController
 public class ProductController {
 
     @Autowired
     private ProductDao productDao;
 
-
-    //Récupérer la liste des produits
-
-    @RequestMapping(value = "/Produits", method = RequestMethod.GET)
-
+    @GetMapping(value = "/Produits")
     public MappingJacksonValue listeProduits() {
-
         Iterable<Product> produits = productDao.findAll();
 
         SimpleBeanPropertyFilter monFiltre = SimpleBeanPropertyFilter.serializeAllExcept("prixAchat");
-
         FilterProvider listDeNosFiltres = new SimpleFilterProvider().addFilter("monFiltreDynamique", monFiltre);
-
         MappingJacksonValue produitsFiltres = new MappingJacksonValue(produits);
-
         produitsFiltres.setFilters(listDeNosFiltres);
 
         return produitsFiltres;
     }
 
 
-    //Récupérer un produit par son Id
+    @ApiOperation(value = "calcule la marge de chaque produit (différence entre prix d‘achat et prix de vente)!")
+    @GetMapping(value = "/AdminProduits")
+    public Map<String, Integer> calculerMargeProduit() {
+        List<Product> produits = productDao.findAll();
+        Map<String, Integer> marges = new LinkedHashMap<>();
+
+        if(produits == null)
+            throw new ProduitIntrouvableException("Aucun produit, trouvé en base !!");
+
+        for (Product product: produits) {
+            int margeProduit = product.getPrix() - product.getPrixAchat();
+            marges.put(product.toString(), margeProduit);
+        }
+
+        return marges;
+    }
+
+
     @ApiOperation(value = "Récupère un produit grâce à son ID à condition que celui-ci soit en stock!")
     @GetMapping(value = "/Produits/{id}")
-
     public Product afficherUnProduit(@PathVariable int id) {
-
         Product produit = productDao.findById(id);
 
-        if(produit==null) throw new ProduitIntrouvableException("Le produit avec l'id " + id + " est INTROUVABLE. Écran Bleu si je pouvais.");
+        if(produit==null)
+            throw new ProduitIntrouvableException("Le produit avec l'ID " + id + " est INTROUVABLE. Écran Bleu si je pouvais.");
 
         return produit;
     }
 
 
-
-
     //ajouter un produit
     @PostMapping(value = "/Produits")
-
     public ResponseEntity<Void> ajouterProduit(@Valid @RequestBody Product product) {
-
         Product productAdded =  productDao.save(product);
 
         if (productAdded == null)
@@ -83,15 +86,15 @@ public class ProductController {
         return ResponseEntity.created(location).build();
     }
 
+
     @DeleteMapping (value = "/Produits/{id}")
     public void supprimerProduit(@PathVariable int id) {
-
         productDao.delete(id);
     }
 
+
     @PutMapping (value = "/Produits")
     public void updateProduit(@RequestBody Product product) {
-
         productDao.save(product);
     }
 
@@ -99,10 +102,7 @@ public class ProductController {
     //Pour les tests
     @GetMapping(value = "test/produits/{prix}")
     public List<Product>  testeDeRequetes(@PathVariable int prix) {
-
         return productDao.chercherUnProduitCher(400);
     }
-
-
 
 }
